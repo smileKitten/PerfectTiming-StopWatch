@@ -1,0 +1,280 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Perfect Timing</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<meta charset="utf-8">
+		<script src="http://code.jquery.com/jquery-1.11.2.min.js"></script>
+
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap-theme.min.css">
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+		<script type="text/javascript" src="http://proton-js.googlecode.com/files/proton-0.5.js"></script>
+		<style type="text/css">
+		.time_format {
+			  text-align: center;
+			  font-size: 2em;
+			  margin: 26px;
+		}
+		.timer_controll{
+			margin: 20px auto;
+			text-align: center;
+		}
+		.timer_controll>button {
+			width: 80px;
+		}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="CountTarget">
+				<h1 id="title" style="text-align: center; margin: 26px">Count Target</h1>
+				<form action="" class="form-inline" style="text-align: center; margin: 26px">
+					<div class="form-group">
+						<input type="text" class="form-control" id="days" placeholder="Days">
+					</div>
+					<div class="form-group">
+						<input type="text" class="form-control" id="hours" placeholder="Hours">
+					</div>
+					<div class="form-group">
+						<input type="text" class="form-control" id="minutes" placeholder="Mintues">
+					</div>
+					<div class="form-group">
+						<input type="text" class="form-control" id="seconds" placeholder="Seconds">
+					</div>
+					
+					<button type="button" class="btn btn-default" id="input_reset">
+						<span class="glyphicon glyphicon-repeat" aria-hidden="true"></span>
+					</button>
+					
+				</form>
+			</div>
+		
+			<div class="row">
+	  			<div class="col-md-6">
+	  				<h1 id="title" style="text-align: center">Stop Watch</h1>
+	  				<div class="time_format" id="stop_watch">0 day 0 hour 0 minute 0 second</div>
+						<div class="timer_controll">
+							<button type="button" class="btn btn-primary btt" id="watch_start" disabled="disabled">Start</button>
+							<button type="button" class="btn btn-danger hidden btt" id="watch_pause">Pause</button>
+							<button type="button" class="btn btn-info btt" id="watch_reset" disabled="disabled">Reset</button>
+						</div>
+	  				</div>
+	 			 <div class="col-md-6">
+	 			 	<h1 id="title" style="text-align: center">Timer</h1>
+	 			 	<div class="time_format" id="timer">0 day 0 hour 0 minute 0 second</div>
+						<div class="timer_controll">
+							<button type="button" class="btn btn-primary btt" id="timer_start" disabled="disabled">Start</button>
+							<button type="button" class="btn btn-danger hidden btt" id="timer_pause">Pause</button>
+							<button type="button" class="btn btn-info btt" id="timer_reset" disabled="disabled">Reset</button>
+						</div>
+	  				</div>
+	 			 </div>
+	 		</div>
+		</div>
+	</body>
+	<script type="text/javascript">
+		$(function() {
+			var timer_time = 0;
+			var timer_id = undefined;
+			var timer_id_1 = undefined;
+			var is_pause = false;
+			var days = 0;
+			var hours = 0;
+			var minutes = 0;
+			var seconds = 0;									
+			var target = 0;
+			var start = false;
+			var timer_rset = false;
+			var watch_rset = false;
+			var timer_finished = false;
+			var watch_finished = false;
+
+			// debugger;
+			function set_target(){
+				days = $('#days').val();
+				hours = $('#hours').val();
+				minutes = $('#minutes').val();
+				seconds = $('#seconds').val();
+
+				if(days == "") days = 0;
+				else days = parseInt(days);
+				if(hours == "") hours = 0;
+				else hours = parseInt(hours);
+				if(minutes == "") minutes = 0;
+				else minutes = parseInt(minutes);
+				if(seconds == "") seconds = 0;
+				else seconds = parseInt(seconds);																	
+
+				target = days*3600*24 + hours * 3600 + minutes * 60 + seconds;
+			}
+
+			function update_text(days, hours, minutes, seconds, id){
+				var day = " days ";
+				var hour = " hours ";
+				var minute = " minutes ";
+				var second = " seconds ";
+
+				if(days <= 1) day = " day ";
+				if(hours <= 1) hour = " hour ";
+				if(minutes <= 1) minute = " minute ";
+				if(seconds <= 1) second = " second ";
+
+				$(id).text(days + day + hours + hour + minutes + minute + seconds + second );
+			}
+			function update_timer(timer_time, id) {
+				days = Math.floor(timer_time/ (3600 * 24));
+				hours = Math.floor(timer_time / 3600) % 24;
+				minutes = Math.floor(timer_time / 60) % 60;
+				seconds = timer_time % 60;
+				update_text(days, hours, minutes, seconds, id);
+			}
+
+			function pause_timer(button, timer_id){
+				window.clearInterval(timer_id);
+				timer_id = undefined;
+				is_pause = true;
+				$(button).addClass('hidden');
+			}
+
+			function start_timer(id){
+				if(id == 1){
+					timer_id = window.setInterval(function(){					
+						timer_time += 1;
+						is_pause = false;
+						update_timer(timer_time,'#stop_watch');	
+						if(reach_target(days*3600*24 + hours * 3600 + minutes * 60 + seconds)){
+							pause_timer('#watch_pause',timer_id);
+							watch_finished = true;
+
+						}
+						if(timer_finished && watch_finished){
+							$('.form-control').prop('disabled', false);
+							$('#input_reset').prop("disabled", false);
+							watch_finished = false;
+							timer_finished = false;
+						}
+					}, 1000);
+				}
+				if(id == 2){
+					var stop_time = target;
+					timer_id_1 = window.setInterval(function(){					
+						stop_time -= 1;
+						is_pause = false;
+						update_timer(stop_time, '#timer');	
+						if(reach_target(stop_time)){
+							pause_timer('#timer_pause',timer_id_1);
+							timer_finished = true;
+						}
+						if(timer_finished && watch_finished){
+							$('.form-control').prop('disabled', false);
+							$('#input_reset').prop("disabled", false);
+							watch_finished = false;
+							timer_finished = false;
+						}
+					}, 1000);
+				}
+			}
+
+			function reset_timer(type_id, timer_id, text_block){
+				// reset++;
+				if(type_id == 1){
+					timer_time = 0;
+					update_timer(timer_time, text_block);
+					start = false;
+					if(is_pause == false){
+						pause_timer('#watch_pause', timer_id);
+					}
+				}
+				if(type_id == 2){
+					set_target();
+					update_text(days, hours, minutes, seconds, '#timer');
+					star = false;
+					if(is_pause == false){
+						pause_timer('#timer_pause', timer_id);
+					}
+				}
+			}
+
+			function reach_target(time){
+				if(time == target){
+					return true;
+				}
+				if(time == 0){
+					return true;
+				}
+				return false;
+			}
+
+			//input control
+			$('.form-control').on('input', function(){
+				$('.btt').removeAttr("disabled");
+				set_target();
+				update_text(days, hours, minutes, seconds, '#timer');
+			});
+
+			$('#input_reset').click(function(){
+				$('#seconds').val("");
+				$('#minutes').val("");
+				$('#hours').val("");
+				$('#days').val("");
+				reset_timer(2, timer_id_1, '#timer');
+			});
+
+			//stop watch control
+			$('#watch_start').click(function() {
+				$('.form-control').prop('disabled', true);
+				$('#input_reset').prop("disabled", true);
+				start_timer(1);
+				$('#watch_start').addClass('hidden');
+				$('#watch_pause').removeClass('hidden');
+			});
+
+			$('#watch_pause').click(function() {
+				pause_timer('#watch_pause',timer_id);
+				$('#watch_start').removeClass('hidden');
+			});
+
+			$('#watch_reset').click(function() {
+				reset_timer(1, timer_id, '#stop_watch');
+				watch_rset = true;				
+				if(watch_rset && timer_rset){
+					$('.form-control').prop('disabled', false);
+					$('#input_reset').prop("disabled", false);
+					watch_rset = false;
+					timer_rset = false;
+				}				
+				$('#watch_start').removeClass('hidden');
+				$('#watch_pause').addClass('hidden');
+			});
+
+			//timer control
+			$('#timer_start').click(function() {
+				$('.form-control').prop('disabled', true);
+				$('#input_reset').prop("disabled", true);
+				start_timer(2);
+				$('#timer_start').addClass('hidden');
+				$('#timer_pause').removeClass('hidden');
+			});
+
+			$('#timer_pause').click(function() {
+				pause_timer('#timer_pause',timer_id_1);
+				$('#timer_start').removeClass('hidden');
+			});
+
+			$('#timer_reset').click(function() {
+				reset_timer(2, timer_id_1, '#timer');
+				timer_rset = true;				
+				if(watch_rset && timer_rset){
+					$('.form-control').prop('disabled', false);
+					$('#input_reset').prop("disabled", false);
+					watch_rset = false;
+					timer_rset = false;
+				}
+				$('#timer_start').removeClass('hidden');
+				$('#timer_pause').addClass('hidden');
+			});
+
+		})
+	</script>
+</html>
